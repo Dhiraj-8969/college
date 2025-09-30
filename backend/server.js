@@ -1,7 +1,6 @@
 // server.js (CommonJS)
 const express = require('express');
 const mongoose = require('mongoose');
-const multer = require('multer');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
@@ -14,11 +13,6 @@ app.use(cors());
 app.use(express.json());
 
 // Make uploads folder if missing
-const uploadDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
-
-// Serve uploaded images if you want to view them
-app.use('/uploads', express.static(uploadDir));
 
 // ---------- MongoDB ----------
 const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://kumarvikash6382531071:2200428@cluster0.ftrkjkb.mongodb.net/bbsbec';
@@ -34,25 +28,14 @@ const studentSchema = new mongoose.Schema({
   phone: { type: String, required: true },
   email: { type: String, required: true },
   batch: { type: String, required: true },
-  branch: { type: String, required: true },
-  photoPath: { type: String }
+  branch: { type: String, required: true }
 }, { timestamps: true });
 
 const Student = mongoose.model('Student', studentSchema);
 
-// ---------- Multer setup ----------
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const base = path.basename(file.originalname, ext).replace(/\s+/g, '_');
-    cb(null, Date.now() + '_' + base + ext);
-  }
-});
-const upload = multer({ storage });
 
 // ---------- API route ----------
-app.post('/api/students', upload.single('photo'), async (req, res) => {
+app.post('/api/students', async (req, res) => {
   try {
     const { name, rollno, phone, email, batch, branch } = req.body;
 
@@ -61,8 +44,7 @@ app.post('/api/students', upload.single('photo'), async (req, res) => {
     }
 
     const student = new Student({
-      name, rollno, phone, email, batch, branch,
-      photoPath: req.file ? '/uploads/' + req.file.filename : null
+      name, rollno, phone, email, batch, branch
     });
 
     await student.save();
